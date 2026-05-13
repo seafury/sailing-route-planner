@@ -10,6 +10,13 @@ A clean, fast, offline-capable web app that lets sailors:
 
 No backend required. Everything runs in the browser. Deployable to GitHub Pages for free.
 
+## Scope and Principles
+
+- This document is product and delivery focused (features, architecture, risks, milestones).
+- Tooling/editor recommendations live in `README.md`, not in this project plan.
+- MVP target: static front-end hosted on GitHub Pages.
+- Optional infrastructure (serverless proxy) is allowed only when a third-party data source cannot be consumed client-side due to CORS or licensing constraints.
+
 ---
 
 ## Architecture
@@ -24,7 +31,8 @@ sailing-route-planner/
 │   ├── tides.js            ← Tide data fetch + sidebar render
 │   ├── app.js              ← Map init, routing, UI event handlers
 │   └── overlays.js         ← Tide polygons, wind barbs (future)
-├── README.md               ← This file
+├── PROJECT_PLAN.md         ← This file
+├── README.md               ← Setup + tooling notes
 └── package.json            ← Dependencies (leaflet, live-server)
 ```
 
@@ -39,87 +47,96 @@ User clicks map → app.js captures latlng → adds waypoint marker
          Fetch tide predictions → render table + colour-code route segments
 ```
 
+## Constraints and Assumptions
+
+- **Hosting model:** Static-first. Primary deployment is GitHub Pages.
+- **Optional proxy:** If a required provider blocks browser access (CORS/rate limits/auth), use a minimal serverless proxy (Cloudflare Worker/Vercel Function) with read-only pass-through and no user data storage.
+- **Data licensing:** Every external source must be validated for usage rights before implementation.
+- **Offline behavior:** App shell (HTML/CSS/JS + recent routes) should work offline. Live weather/tide fetches require connectivity. Basemap tiles are best-effort cache and subject to tile provider ToS.
+- **Safety disclaimer:** Forecast overlays are decision-support only, not a substitute for official marine forecasts, charts, or seamanship.
+
 ---
 
-## Build Steps
+## MVP Definition (Strict)
 
-### Phase 1: Foundation ✅ (DONE)
-- [x] Scaffold repo structure (`index.html`, `css/style.css`, `js/config.js`, `js/app.js`, `js/tides.js`)
-- [x] Set up Leaflet map with OSM tiles
-- [x] Add waypoint placement via map click
-- [x] Add UI controls (Start/End/Route/Clear/Tides buttons)
-- [x] Integrate OSRM for route calculation
-- [x] Add marine data fetch from Open-Meteo (free, no key)
-- [x] Dark nautical theme CSS
-- [x] Responsive sidebar with route details + tide forecast
+The MVP is complete only when all items below are done. Anything not listed here is post-MVP.
 
-### Phase 2: Tide Overlay 🔲
-- [ ] Parse tide-forecast.com or use NOAA CO-OPS (US) data
-- [ ] Render tide table in sidebar (done, but needs live data source)
-- [ ] Add serverless proxy (Vercel/Cloudflare Worker) for CORS-heavy sources
-- [ ] Colour-code route segments: 🟢 safe (< 1.5m) / 🟡 caution (1.5–3m) / 🔴 danger (> 3m)
+### 1) Core Routing and UI (`js/app.js`, `index.html`, `css/style.css`) ✅ mostly done
+- [x] Place waypoints via map click
+- [x] Build route polyline from 2+ waypoints using OSRM
+- [x] Show route details in sidebar (distance/basic route info)
+- [x] Provide core controls (Start/End/Route/Clear/Tides)
+- [ ] Ensure clear error states for failed route requests and empty waypoint sets
 
-### Phase 3: Marine Weather Integration 🔲
-- [ ] Fetch wind barbs data from Open-Meteo
-- [ ] Overlay wind direction arrows on map (Canvas or SVG layer)
-- [ ] Add hourly forecast panel (next 24h swell/wind timeline)
-- [ ] Warning system: banner when conditions exceed `dangerSwellMeters` threshold
+### 2) Live Marine Conditions (`js/app.js`, `js/config.js`) ✅ mostly done
+- [x] Fetch marine weather from Open-Meteo
+- [x] Show at least swell + wind values in sidebar
+- [ ] Add timestamp + source attribution for weather data
+- [ ] Handle fetch failure with non-blocking UI banner and stale-data indicator
 
-### Phase 4: Polish 🔲
+### 3) Tide Data and Risk Output (`js/tides.js`, `js/config.js`, `js/app.js`) 🔲
+- [ ] Finalize one primary South Africa-capable tide provider (licensed + browser-accessible)
+- [ ] Add one fallback provider and normalize both to a shared tide schema
+- [ ] Render tide table with station name, timestamps, and source label
+- [ ] Add optional proxy path only if direct browser calls are blocked by CORS/auth
+- [ ] Implement risk banner in sidebar using v1 multi-factor model from `config.js`:
+  - swell height
+  - wind speed
+  - wind-relative direction
+  - tide/current
+- [ ] Show risk level (`safe`/`caution`/`danger`) plus plain-language reason
+
+### 4) Static Deployment Baseline (`package.json`, GitHub Pages) 🔲
+- [ ] Deploy working static build to GitHub Pages
+- [ ] Confirm app starts, routes, and displays weather/tides in production
+- [ ] Document required runtime config values in `README.md`
+
+## MVP Acceptance Criteria
+
+MVP is accepted when:
+- [ ] User can plot a route with 2+ waypoints and see route drawn consistently
+- [ ] User sees current swell/wind and tide data with source + timestamp
+- [ ] User sees a risk banner with at least one reason when thresholds are exceeded
+- [ ] If one provider fails, app either falls back or shows clear degraded-state messaging
+- [ ] Same workflow works on GitHub Pages deploy without local-only assumptions
+
+---
+
+## Post-MVP Roadmap (Aligned to Modules)
+
+### Phase A: Mapping Enhancements (`js/overlays.js`)
+- [ ] Wind direction arrows/barbs overlay (Canvas or SVG layer)
+- [ ] Tide/safety route segment color overlays on map
+
+### Phase B: Forecast UX (`js/app.js`, `css/style.css`)
+- [ ] Hourly panel (next 24h wind/swell timeline)
+- [ ] Per-vessel presets and quick profile switching
 - [ ] Save/load routes to `localStorage`
-- [ ] Export GPX/KML for chartplotter import
-- [ ] PWA manifest for offline use (cache API for tiles + JS)
-- [ ] Print-friendly route sheet (A4 PDF layout)
-- [ ] Deploy to GitHub Pages (`npm run deploy`)
 
-### Phase 5: Cape Town Specific 🔲
+### Phase C: Interoperability + Offline (`index.html`, service worker files, build/deploy)
+- [ ] Export GPX/KML for chartplotter import
+- [ ] PWA shell caching (app assets + recent route metadata)
+- [ ] Print-friendly route sheet (A4 PDF layout)
+
+### Phase D: Cape Town Pack (`js/config.js`, `js/overlays.js`)
 - [ ] Pre-load Cape Town harbour as default route
 - [ ] SAWS synoptic chart overlay toggle
 - [ ] Local tide stations (Cape Town, Saldanha, Mossel Bay)
 - [ ] NSRI station locations as map markers
 
----
+## Data Source Strategy
 
-## Recommended Vibe Coding IDE
-
-### TL;DR: **VS Code + Continue extension**
-
-| IDE | Price | Why / Why Not |
-|-----|-------|---------------|
-| **Cursor** | Free tier (limited) / $20/mo | Great AI IDE but overkill for a static HTML/JS project. Heavy, replaces your whole workflow. Good if you're building large apps daily. |
-| **OpenCode** | Free (open source) | Solid, Claude-powered. Good balance. But needs manual setup + provider config. |
-| **OpenCode Go** | $10/mo | Managed experience, great models. But paying $10/mo to scaffold a ~500-line static site is like hiring a yacht to cross a pond. |
-| **VS Code + Continue** ⭐ | **Free** | Best fit for your setup. Here's why: |
-
-### Why VS Code + Continue wins for this project:
-
-1. **You already use OpenRouter** — Continue extension plugs directly into your existing `OPENROUTER_API_KEY`, with model dropdown (switch between free/paid in one click)
-2. **Cost: zero** — VS Code is free, Continue is free, OpenRouter free-tier models work fine for incremental edits
-3. **Agentic coding** — Continue's `/edit` and `/code` commands let you describe changes in natural language and apply them inline — perfect for "add tide polygon overlay to route segments"
-4. **Git integrated** — Built-in terminal + Git GUI, you can commit/push without leaving the editor
-5. **Lightweight** — No Electron bloat, starts instantly, works on your Mac Mini Linux box
-6. **Long-term value** — When you build the leather/silver crafting e-commerce site later (or whatever else), it's already there. Not locked into a vibe-coding-only tool
-
-### Quick Setup:
-
-```bash
-# Install if not already
-sudo apt install code
-
-# In VS Code: Extensions → search "Continue" → Install
-# Then: Continue → Settings → Add OpenRouter API key
-# Model: deepseek/deepseek-v4-pro (your existing key)
-```
-
-### Workflow for this project:
-```
-1. Open sailing-route-planner/ in VS Code
-2. Select text you want to change
-3. Cmd+I (or Ctrl+I) → Describe what you want
-4. Continue generates the edit → Accept or iterate
-5. Built-in terminal: npm start → test in browser
-```
+1. Define candidate providers by domain:
+   - Tides (South Africa focus)
+   - Marine weather/wind/waves
+   - Optional chart overlays
+2. For each provider, validate:
+   - CORS behavior for browser requests
+   - Terms/licensing for app display
+   - Rate limits and uptime reliability
+3. Implement adapter layer per provider in JS modules so UI is source-agnostic.
+4. Add runtime fallback order and visible source attribution in sidebar.
+5. Log provider failures in console with user-friendly banner in UI.
 
 ---
-
-**When Cursor *would* make sense:** If you start building the full e-commerce platform for leather/silver products (React/Node/DB) — that's when a full AI IDE with multi-file context shines. For now, Keep It Simple. 🧭
+**Note:** Tooling/editor guidance is intentionally excluded from this plan and should be maintained in `README.md`.
