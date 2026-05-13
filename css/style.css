@@ -1,0 +1,68 @@
+/* ── Reset & Base ─────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0e17; color: #e0e6ed; }
+
+/* ── Layout ──────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px; background: #111827; border-bottom: 1px solid #1e293b;
+}
+header h1 { font-size: 1.4rem; font-weight: 700; }
+
+#map { flex: 1; z-index: 0; }
+
+#controls {
+  position: absolute; top: 70px; left: 12px; z-index: 1000;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.btn {
+  padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+}
+.btn-primary  { background: #3b82f6; color: #fff; }
+.btn-secondary{ background: #6366f1; color: #fff; }
+.btn-accent   { background: #22c55e; color: #fff; }
+.btn-danger   { background: #ef4444; color: #fff; }
+.btn-outline  { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+.btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Tide Badge ──────────────────────────────────────────── */
+.tide-badge {
+  padding: 6px 14px; border-radius: 20px; font-size: 0.8rem;
+  background: #1e293b; color: #38bdf8; border: 1px solid #334155;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+#sidebar {
+  position: absolute; bottom: 12px; right: 12px; width: 320px; max-height: 45vh;
+  background: #111827ee; border: 1px solid #1e293b; border-radius: 12px;
+  padding: 16px; overflow-y: auto; z-index: 1000; font-size: 0.85rem;
+  backdrop-filter: blur(8px);
+}
+#sidebar h3 { margin-bottom: 8px; color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+#sidebar .muted { color: #64748b; font-style: italic; }
+#route-details, #tide-forecast { margin-bottom: 16px; }
+
+/* ── Tide table ──────────────────────────────────────────── */
+.tide-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+.tide-table th, .tide-table td { padding: 4px 8px; text-align: left; border-bottom: 1px solid #1e293b; }
+.tide-table th { color: #64748b; font-size: 0.7rem; text-transform: uppercase; }
+.high { color: #38bdf8; }
+.low  { color: #f97316; }
+
+/* ── Waypoint markers ────────────────────────────────────── */
+.waypoint-label {
+  background: #111827; border: 2px solid #3b82f6; border-radius: 50%;
+  width: 28px; height: 28px; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 0.75rem;
+  color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  #sidebar { width: calc(100% - 24px); max-height: 35vh; bottom: 8px; right: 8px; left: 8px; }
+  #controls { top: 60px; left: 8px; }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "sailing-route-planner",
+  "version": "0.1.0",
+  "description": "Sailing route planner with tide data overlay on Leaflet map",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=8080",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": ["sailing", "route-planner", "leaflet", "tides", "marine"],
+  "license": "MIT",
+  "devDependencies": {
+    "leaflet": "^1.9.4",
+    "leaflet-routing-machine": "^3.2.12"
+  }
+}
