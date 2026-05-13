@@ -19,8 +19,18 @@
       <button id="btn-set-start" class="btn btn-primary">📍 Set Start</button>
       <button id="btn-set-end" class="btn btn-secondary">🎯 Set End</button>
       <button id="btn-route" class="btn btn-accent">🧭 Plan Route</button>
+      <button id="btn-swell-overlay" class="btn btn-outline">🌊 Toggle Swell Overlay</button>
       <button id="btn-clear" class="btn btn-danger">🗑️ Clear</button>
       <button id="btn-today" class="btn btn-outline">📅 Today's Tides</button>
+      <div class="latlon-form">
+        <input id="input-lat" type="number" step="any" placeholder="Lat (e.g. -33.92)" />
+        <input id="input-lon" type="number" step="any" placeholder="Lon (e.g. 18.42)" />
+        <button id="btn-add-latlon" class="btn btn-secondary">➕ Add Lat/Lon</button>
+      </div>
+      <div class="speed-form">
+        <input id="input-speed-knots" type="number" step="0.1" min="0.1" placeholder="Speed (kn)" />
+        <button id="btn-set-speed" class="btn btn-secondary">⛵ Set Speed</button>
+      </div>
     </div>
     <div id="sidebar">
       <h3>Route Details</h3>

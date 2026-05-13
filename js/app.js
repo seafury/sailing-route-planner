@@ -18,9 +18,11 @@ const CONFIG = {
 
   // Chart display
   routeColor: '#22c55e',
+  waypointLinkColor: '#4b0082', // Dark purple
   routeWeight: 4,
   waypointColor: '#3b82f6',
   dangerSwellMeters: 3.0,  // Waves above this trigger warnings
+  planningSpeedKnots: 6.0, // Default vessel planning speed
 };
 
 // ── Marine & Tide Fetch Module ──────────────────────────────────────────
@@ -81,8 +83,46 @@ class RouteManager {
     this.map = map;
     this.waypoints = [];
     this.routeLine = null;
+    this.waypointLinks = [];
+    this.waypointArrows = [];
     this.markers = [];
     this.routingControl = null;
+    this.lastDistanceNm = null;
+  }
+
+  metersToNauticalMiles(meters) {
+    return meters / 1852;
+  }
+
+  formatEtaFromHours(totalHours) {
+    const hours = Math.floor(totalHours);
+    const minutes = Math.round((totalHours - hours) * 60);
+    if (minutes === 60) return `${hours + 1}h 00m`;
+    return `${hours}h ${String(minutes).padStart(2, '0')}m`;
+  }
+
+  renderPlanningDetails(distanceNm) {
+    const etaHours = distanceNm / CONFIG.planningSpeedKnots;
+    document.getElementById('route-details').innerHTML = `
+      <p><strong>Distance:</strong> ${distanceNm.toFixed(2)} nm</p>
+      <p><strong>Planning speed:</strong> ${CONFIG.planningSpeedKnots.toFixed(1)} kn</p>
+      <p><strong>Est. time:</strong> ${this.formatEtaFromHours(etaHours)}</p>
+      <p><strong>Waypoints:</strong> ${this.waypoints.length}</p>
+    `;
+  }
+
+  calculateBearingDegrees(from, to) {
+    const fromLat = (from.lat * Math.PI) / 180;
+    const fromLng = (from.lng * Math.PI) / 180;
+    const toLat = (to.lat * Math.PI) / 180;
+    const toLng = (to.lng * Math.PI) / 180;
+    const deltaLng = toLng - fromLng;
+
+    const y = Math.sin(deltaLng) * Math.cos(toLat);
+    const x = (Math.cos(fromLat) * Math.sin(toLat))
+      - (Math.sin(fromLat) * Math.cos(toLat) * Math.cos(deltaLng));
+    const bearing = (Math.atan2(y, x) * 180) / Math.PI;
+    return (bearing + 360) % 360;
   }
 
   addWaypoint(latlng) {
@@ -99,6 +139,41 @@ class RouteManager {
     }).addTo(map);
 
     this.markers.push(marker);
+
+    // Draw a direct visual link from the previous waypoint to this one.
+    if (this.waypoints.length >= 2) {
+      const prev = this.waypoints[this.waypoints.length - 2];
+      const link = L.polyline([prev, latlng], {
+        color: CONFIG.waypointLinkColor,
+        weight: 3,
+        opacity: 0.9,
+      }).addTo(this.map);
+      this.waypointLinks.push(link);
+
+      const midpoint = L.latLng(
+        (prev.lat + latlng.lat) / 2,
+        (prev.lng + latlng.lng) / 2
+      );
+      const bearing = this.calculateBearingDegrees(prev, latlng);
+      const bearingTrue = Math.round(bearing);
+      const cssRotation = bearing - 90;
+      const arrow = L.marker(midpoint, {
+        icon: L.divIcon({
+          className: 'waypoint-link-arrow',
+          html: `<div style="color:${CONFIG.waypointLinkColor};font-size:18px;line-height:1;transform:rotate(${cssRotation}deg);">➤</div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+      }).addTo(this.map);
+      arrow.bindTooltip(`${bearingTrue}°T`, {
+        permanent: true,
+        direction: 'top',
+        offset: [0, -10],
+        className: 'bearing-tooltip',
+      });
+      this.waypointArrows.push(arrow);
+    }
+
     if (this.waypoints.length >= 2) this.calculateRoute();
   }
 
@@ -116,18 +191,18 @@ class RouteManager {
       }),
       lineOptions: {
         styles: [{ color: CONFIG.routeColor, weight: CONFIG.routeWeight, opacity: 0.8 }],
+        extendToWaypoints: false, // Remove grey dashed connectors to snapped road points.
       },
       show: false,
       addWaypoints: false,
+      fitSelectedRoutes: false, // Keep user-controlled viewport; do not auto-zoom/pan.
     }).addTo(this.map);
 
     this.routingControl.on('routesfound', (e) => {
       const route = e.routes[0];
-      document.getElementById('route-details').innerHTML = `
-        <p><strong>Distance:</strong> ${(route.summary.totalDistance / 1000).toFixed(1)} km</p>
-        <p><strong>Est. time:</strong> ${Math.round(route.summary.totalTime / 60)} min</p>
-        <p><strong>Waypoints:</strong> ${this.waypoints.length}</p>
-      `;
+      const distanceNm = this.metersToNauticalMiles(route.summary.totalDistance);
+      this.lastDistanceNm = distanceNm;
+      this.renderPlanningDetails(distanceNm);
     });
   }
 
@@ -135,6 +210,10 @@ class RouteManager {
     this.waypoints = [];
     this.markers.forEach(m => this.map.removeLayer(m));
     this.markers = [];
+    this.waypointLinks.forEach(l => this.map.removeLayer(l));
+    this.waypointLinks = [];
+    this.waypointArrows.forEach(a => this.map.removeLayer(a));
+    this.waypointArrows = [];
     if (this.routingControl) {
       this.map.removeControl(this.routingControl);
       this.routingControl = null;
@@ -153,12 +232,112 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: CONFIG.map.maxZoom,
 }).addTo(map);
 
+// Always-on nautical seamarks overlay (buoys, beacons, lights, etc.).
+L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+  attribution: 'Seamarks: © OpenSeaMap contributors',
+  maxZoom: CONFIG.map.maxZoom,
+}).addTo(map);
+
 // Nautical-style dark tile layer option (uncomment to use)
 // L.tileLayer('https://tiles.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 //   attribution: '© CARTO',
 // }).addTo(map);
 
 const routeManager = new RouteManager(map);
+const swellOverlayLayer = L.layerGroup();
+let swellOverlayVisible = false;
+
+function nearestHourlyIndex(times) {
+  if (!Array.isArray(times) || times.length === 0) return -1;
+  const now = Date.now();
+  let nearestIdx = 0;
+  let nearestDelta = Number.POSITIVE_INFINITY;
+
+  times.forEach((timeStr, idx) => {
+    const timestamp = Date.parse(timeStr);
+    if (Number.isNaN(timestamp)) return;
+    const delta = Math.abs(timestamp - now);
+    if (delta < nearestDelta) {
+      nearestDelta = delta;
+      nearestIdx = idx;
+    }
+  });
+
+  return nearestIdx;
+}
+
+function offsetLatLngByNauticalMiles(origin, bearingDeg, distanceNm = 1) {
+  const distanceMeters = distanceNm * 1852;
+  const bearingRad = (bearingDeg * Math.PI) / 180;
+  const latRad = (origin.lat * Math.PI) / 180;
+  const metersPerDegLat = 111320;
+  const metersPerDegLon = Math.max(111320 * Math.cos(latRad), 1e-6);
+
+  const dLat = (distanceMeters * Math.cos(bearingRad)) / metersPerDegLat;
+  const dLon = (distanceMeters * Math.sin(bearingRad)) / metersPerDegLon;
+
+  return L.latLng(origin.lat + dLat, origin.lng + dLon);
+}
+
+function drawSwellVector(latlng, swellMeters, directionDeg) {
+  const tip = offsetLatLngByNauticalMiles(latlng, directionDeg, 0.6);
+  L.polyline([latlng, tip], {
+    color: '#38bdf8',
+    weight: 3,
+    opacity: 0.95,
+  }).addTo(swellOverlayLayer);
+
+  L.circleMarker(tip, {
+    radius: 4,
+    color: '#38bdf8',
+    fillColor: '#38bdf8',
+    fillOpacity: 0.95,
+    weight: 1,
+  })
+    .bindTooltip(`${swellMeters.toFixed(1)} m | ${Math.round(directionDeg)}°`, {
+      permanent: true,
+      direction: 'top',
+      className: 'waypoint-label',
+      offset: [0, -6],
+    })
+    .addTo(swellOverlayLayer);
+}
+
+async function renderSwellOverlay() {
+  swellOverlayLayer.clearLayers();
+
+  const points = routeManager.waypoints.length > 0
+    ? routeManager.waypoints.slice(0, 10)
+    : [map.getCenter()];
+
+  const results = await Promise.all(
+    points.map(async (point) => {
+      const marine = await fetchMarineData({
+        lat: point.lat,
+        lon: point.lng,
+        days: 1,
+      });
+
+      const idx = nearestHourlyIndex(marine?.hourly?.time);
+      if (idx < 0) return null;
+
+      const swellMeters = marine?.hourly?.swell_wave_height?.[idx];
+      // Open-Meteo hourly does not currently expose swell direction directly.
+      // Use wave direction as best available proxy for swell travel direction.
+      const directionDeg = marine?.hourly?.wave_direction?.[idx];
+
+      if (typeof swellMeters !== 'number' || typeof directionDeg !== 'number') return null;
+      return { point, swellMeters, directionDeg };
+    })
+  );
+
+  const valid = results.filter(Boolean);
+  valid.forEach(({ point, swellMeters, directionDeg }) => {
+    drawSwellVector(point, swellMeters, directionDeg);
+  });
+
+  return valid.length;
+}
 
 // ── Tide overlay layer ─────────────────────────────────────────────────
 // TODO: Render tide height as coloured polygons along the route.
@@ -167,6 +346,7 @@ const routeManager = new RouteManager(map);
 // ── UI Event Handlers ───────────────────────────────────────────────────
 
 let mode = 'start'; // 'start' | 'end'
+document.getElementById('input-speed-knots').value = CONFIG.planningSpeedKnots.toFixed(1);
 
 document.getElementById('btn-set-start').addEventListener('click', () => {
   mode = 'start';
@@ -184,6 +364,88 @@ document.getElementById('btn-set-end').addEventListener('click', () => {
 
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();
+  swellOverlayLayer.clearLayers();
+  if (map.hasLayer(swellOverlayLayer)) {
+    map.removeLayer(swellOverlayLayer);
+  }
+  swellOverlayVisible = false;
+  document.getElementById('btn-swell-overlay').textContent = '🌊 Toggle Swell Overlay';
+});
+
+document.getElementById('btn-add-latlon').addEventListener('click', () => {
+  const latInput = document.getElementById('input-lat');
+  const lonInput = document.getElementById('input-lon');
+
+  const lat = Number.parseFloat(latInput.value);
+  const lon = Number.parseFloat(lonInput.value);
+
+  if (Number.isNaN(lat) || Number.isNaN(lon)) {
+    alert('Please enter valid latitude and longitude values.');
+    return;
+  }
+
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    alert('Latitude must be between -90 and 90, and longitude between -180 and 180.');
+    return;
+  }
+
+  routeManager.addWaypoint(L.latLng(lat, lon));
+  map.panTo([lat, lon]);
+  latInput.value = '';
+  lonInput.value = '';
+});
+
+document.getElementById('btn-set-speed').addEventListener('click', () => {
+  const speedInput = document.getElementById('input-speed-knots');
+  const speedKnots = Number.parseFloat(speedInput.value);
+
+  if (Number.isNaN(speedKnots) || speedKnots <= 0) {
+    alert('Please enter a valid speed in knots (greater than 0).');
+    return;
+  }
+
+  CONFIG.planningSpeedKnots = speedKnots;
+
+  if (routeManager.waypoints.length >= 2) {
+    if (routeManager.lastDistanceNm !== null) {
+      routeManager.renderPlanningDetails(routeManager.lastDistanceNm);
+    } else {
+      routeManager.calculateRoute();
+    }
+  }
+});
+
+document.getElementById('btn-swell-overlay').addEventListener('click', async () => {
+  const button = document.getElementById('btn-swell-overlay');
+
+  if (swellOverlayVisible) {
+    map.removeLayer(swellOverlayLayer);
+    swellOverlayVisible = false;
+    button.textContent = '🌊 Toggle Swell Overlay';
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = '🌊 Loading Swell...';
+
+  try {
+    const renderedCount = await renderSwellOverlay();
+    if (renderedCount === 0) {
+      alert('No swell overlay data available right now for the selected area.');
+      button.textContent = '🌊 Toggle Swell Overlay';
+      return;
+    }
+
+    swellOverlayLayer.addTo(map);
+    swellOverlayVisible = true;
+    button.textContent = '🌊 Hide Swell Overlay';
+  } catch (err) {
+    console.error('Swell overlay fetch failed:', err);
+    alert('Unable to load swell overlay at the moment.');
+    button.textContent = '🌊 Toggle Swell Overlay';
+  } finally {
+    button.disabled = false;
+  }
 });
 
 document.getElementById('btn-route').addEventListener('click', async () => {
@@ -191,6 +453,9 @@ document.getElementById('btn-route').addEventListener('click', async () => {
     alert('Set at least 2 waypoints first!');
     return;
   }
+
+  // Always refresh planning details from current route distance and vessel speed.
+  routeManager.calculateRoute();
 
   // Fetch marine data for the route bbox
   const bounds = map.getBounds();
