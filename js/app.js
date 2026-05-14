@@ -339,10 +339,6 @@ document.getElementById('btn-add-coord').addEventListener('click', () => {
   map.setView(latlng, map.getZoom());
 });
 
-document.getElementById('btn-undo').addEventListener('click', () => {
-  routeManager.waypoints.pop();
-  routeManager.render();
-});
 
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();

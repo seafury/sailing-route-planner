@@ -25,7 +25,6 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
 .btn-secondary{ background: #6366f1; color: #fff; }
 .btn-accent   { background: #22c55e; color: #fff; }
 .btn-danger   { background: #ef4444; color: #fff; }
-.btn-warning  { background: #f59e0b; color: #fff; }
 .btn-outline  { background: transparent; color: #94a3b8; border: 1px solid #334155; }
 .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
