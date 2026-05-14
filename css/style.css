@@ -107,6 +107,28 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   display: none;
 }
 
+/* ── Layer Control Styling ───────────────────────────────── */
+.leaflet-control-layers {
+  background: #111827ee !important;
+  border: 1px solid #1e293b !important;
+  color: #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 6px !important;
+  backdrop-filter: blur(8px);
+}
+.leaflet-control-layers-expanded {
+  padding: 10px !important;
+}
+.leaflet-control-layers label {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  background: #111827ee !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #1e293b !important;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 600px) {
   #sidebar { width: calc(100% - 24px); max-height: 35vh; bottom: 8px; right: 8px; left: 8px; }

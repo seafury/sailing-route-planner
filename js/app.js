@@ -303,23 +303,54 @@ class RouteManager {
 
 // ── Map Init ────────────────────────────────────────────────────────────
 
-const map = L.map('map', CONFIG.map).setView(CONFIG.map.center, CONFIG.map.zoom);
+// ── Map & Layer Initialization ──────────────────────────────────────────
+const map = L.map('map', {
+  ...CONFIG.map,
+  zoomControl: false // Moved to allow custom positioning if needed
+});
 
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors',
-  maxZoom: CONFIG.map.maxZoom,
+// 1. Base Layers
+const baseLayers = {
+  "Nautical Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: CONFIG.map.maxZoom
+  }),
+  "Standard Chart": L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: CONFIG.map.maxZoom
+  }),
+  "Satellite Imagery": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+  })
+};
+
+// 2. Overlays
+const overlays = {
+  "Seamarks (Buoys/Lights)": L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+    attribution: 'Seamarks: &copy; OpenSeaMap contributors',
+    maxZoom: CONFIG.map.maxZoom
+  }),
+  "Bathymetry (Depths)": L.tileLayer.wms('https://wms.gebco.net/mapserv?', {
+    layers: 'GEBCO_LATEST',
+    format: 'image/png',
+    transparent: true,
+    attribution: 'Bathymetry: &copy; GEBCO'
+  })
+};
+
+// Add default layers
+baseLayers["Nautical Dark"].addTo(map);
+overlays["Seamarks (Buoys/Lights)"].addTo(map);
+
+// Add Layer Control
+L.control.layers(baseLayers, overlays, {
+  position: 'topright',
+  collapsed: true
 }).addTo(map);
 
-// Always-on nautical seamarks overlay (buoys, beacons, lights, etc.).
-L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-  attribution: 'Seamarks: © OpenSeaMap contributors',
-  maxZoom: CONFIG.map.maxZoom,
-}).addTo(map);
-
-// Nautical-style dark tile layer option (uncomment to use)
-// L.tileLayer('https://tiles.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-//   attribution: '© CARTO',
-// }).addTo(map);
+// Add Zoom Control back in a cleaner spot
+L.control.zoom({ position: 'topright' }).addTo(map);
 
 const routeManager = new RouteManager(map);
 const swellOverlayLayer = L.layerGroup();
