@@ -306,39 +306,22 @@ class RouteManager {
 // ── Map & Layer Initialization ──────────────────────────────────────────
 const map = L.map('map', {
   ...CONFIG.map,
-  zoomControl: false // Moved to allow custom positioning if needed
+  zoomControl: false
 });
 
-// 1. Base Layers
-const baseLayers = {
-  "Standard Chart": L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: CONFIG.map.maxZoom
-  }),
-  "Satellite Imagery": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
-  })
-};
-
-// 2. Overlays
-const overlays = {
-  "Seamarks (Buoys/Lights)": L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
-    attribution: 'Seamarks: &copy; OpenSeaMap contributors',
-    maxZoom: CONFIG.map.maxZoom
-  })
-};
-
-// Add default layers
-baseLayers["Standard Chart"].addTo(map);
-overlays["Seamarks (Buoys/Lights)"].addTo(map);
-
-// Add Layer Control
-L.control.layers(baseLayers, overlays, {
-  position: 'topright',
-  collapsed: false // Kept expanded for easier maritime use
+// 1. Base Layer (Standard Chart)
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: CONFIG.map.maxZoom
 }).addTo(map);
 
-// Add Zoom Control in top-left to avoid overlap
+// 2. Overlay (Seamarks - Buoys/Lights)
+L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
+  attribution: 'Seamarks: &copy; OpenSeaMap contributors',
+  maxZoom: CONFIG.map.maxZoom
+}).addTo(map);
+
+// Add Zoom Control in top-left
 L.control.zoom({ position: 'topleft' }).addTo(map);
 
 // Handle base layer changes for debugging/consistency
