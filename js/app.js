@@ -166,7 +166,7 @@ class RouteManager {
         extendToWaypoints: false,
       },
       createMarker: (i, wp) => {
-        const marker = L.marker(wp.latLng, {
+        return L.marker(wp.latLng, {
           draggable: true,
           icon: L.divIcon({
             className: 'waypoint-icon',
@@ -175,18 +175,16 @@ class RouteManager {
             iconAnchor: [12, 12]
           })
         });
-        
-        marker.on('contextmenu', (e) => {
-          L.DomEvent.stopPropagation(e);
-          this.waypoints.splice(i, 1);
-          this.render();
-        });
-        
-        return marker;
       },
       show: false,
       addWaypoints: false,
       fitSelectedRoutes: false,
+    }).addTo(this.map);
+
+    this.routingControl.on('waypointcontextmenu', (e) => {
+      console.log('Waypoint context menu', e.index);
+      this.waypoints.splice(e.index, 1);
+      this.render();
     });
 
     this.routingControl.on('routesfound', (e) => {
