@@ -449,5 +449,58 @@ async function renderWindOverlay() {
 
 document.getElementById('btn-wind').addEventListener('click', toggleWind);
 
+// ── Mouse Tracking Logic ────────────────────────────────────────────────
+map.on('mousemove', (e) => {
+  const el = document.getElementById('mouse-coords');
+  if (el) {
+    el.textContent = `Lat: ${e.latlng.lat.toFixed(4)}, Lon: ${e.latlng.lng.toFixed(4)}`;
+  }
+});
+
+// ── Grid Overlay Logic ──────────────────────────────────────────────────
+const gridLayer = L.layerGroup();
+let gridVisible = false;
+
+function toggleGrid() {
+  const btn = document.getElementById('btn-grid');
+  gridVisible = !gridVisible;
+
+  if (gridVisible) {
+    btn.classList.add('active');
+    renderGrid();
+    gridLayer.addTo(map);
+  } else {
+    btn.classList.remove('active');
+    map.removeLayer(gridLayer);
+  }
+}
+
+function renderGrid() {
+  gridLayer.clearLayers();
+  const step = 0.1; // 0.1 degree grid
+  
+  // Latitude lines
+  for (let lat = -90; lat <= 90; lat += step) {
+    L.polyline([[lat, -180], [lat, 180]], {
+      color: '#334155',
+      weight: 0.5,
+      opacity: 0.5,
+      interactive: false
+    }).addTo(gridLayer);
+  }
+  
+  // Longitude lines
+  for (let lon = -180; lon <= 180; lon += step) {
+    L.polyline([[-90, lon], [90, lon]], {
+      color: '#334155',
+      weight: 0.5,
+      opacity: 0.5,
+      interactive: false
+    }).addTo(gridLayer);
+  }
+}
+
+document.getElementById('btn-grid').addEventListener('click', toggleGrid);
+
 // Sidebar initialization
 loadCapeTownData();
