@@ -329,9 +329,54 @@ map.on('baselayerchange', (e) => {
   console.log(`Map theme changed to: ${e.name}`);
 });
 
+import { CAPE_TOWN_MARITIME } from './overlays.js';
+
+// ... (existing code)
+
 const routeManager = new RouteManager(map);
 const swellOverlayLayer = L.layerGroup();
 let swellOverlayVisible = false;
+
+// Cape Town Maritime Pack Layer
+const ctOverlayLayer = L.geoJSON(CAPE_TOWN_MARITIME, {
+  style: (feature) => feature.properties.style || {},
+  onEachFeature: (feature, layer) => {
+    if (feature.properties.name) {
+      layer.bindTooltip(`<b>${feature.properties.name}</b><br>${feature.properties.description}`, { sticky: true });
+    }
+  },
+  pointToLayer: (feature, latlng) => {
+    if (feature.properties.icon) {
+      return L.marker(latlng, {
+        icon: L.divIcon({
+          html: `<div class="maritime-icon">${feature.properties.icon}</div>`,
+          className: 'custom-div-icon',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        })
+      });
+    }
+    return L.circleMarker(latlng);
+  }
+});
+
+let ctOverlayVisible = false;
+
+function toggleCTPack() {
+  ctOverlayVisible = !ctOverlayVisible;
+  const btn = document.getElementById('btn-ct-pack');
+  if (ctOverlayVisible) {
+    ctOverlayLayer.addTo(map);
+    btn.classList.add('active');
+    // Zoom to Cape Town if not already there
+    map.flyTo([-33.9, 18.4], 12);
+  } else {
+    map.removeLayer(ctOverlayLayer);
+    btn.classList.remove('active');
+  }
+}
+
+window.toggleCTPack = toggleCTPack; // Expose for HTML button
 
 function nearestHourlyIndex(times) {
   if (!Array.isArray(times) || times.length === 0) return -1;

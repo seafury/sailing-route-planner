@@ -107,6 +107,27 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   display: none;
 }
 
+/* ── Maritime Icons & Overlays ──────────────────────────── */
+.maritime-icon {
+  background: #1e293b;
+  border: 2px solid #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.btn-outline.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+}
+
 /* ── Zoom Control Styling ────────────────────────────────── */
 .leaflet-control-zoom-in, .leaflet-control-zoom-out {
   width: 34px !important;
