@@ -5,7 +5,7 @@ async function fetchMarineData({ lat, lon, days = 3 }) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,
-    hourly: 'wave_height,wave_direction,wind_wave_height,swell_wave_height,wave_period,wind_speed_10m',
+    hourly: 'wave_height,wave_direction,wind_wave_height,swell_wave_height,wave_period,wind_speed_10m,wind_direction_10m',
     daily: 'wave_height_max,wave_direction_dominant,swell_wave_height_max,swell_wave_period_max',
     timezone: 'Africa/Johannesburg',
     start_date: today,
@@ -287,15 +287,34 @@ document.getElementById('btn-set-speed').addEventListener('click', () => {
   }
 });
 
-document.getElementById('btn-add-coord').addEventListener('click', () => {
-  const latStr = document.getElementById('input-lat').value.trim();
-  const lonStr = document.getElementById('input-lon').value.trim();
+function parseCoordinate(str) {
+  if (!str) return NaN;
+  const s = str.trim().toUpperCase();
   
-  const lat = parseFloat(latStr);
-  const lon = parseFloat(lonStr);
+  // Handle cardinal suffixes
+  let multiplier = 1;
+  if (s.endsWith('S') || s.endsWith('W')) multiplier = -1;
+  
+  // Remove non-numeric chars except decimals and spaces
+  const clean = s.replace(/[^\d\s\.]/g, '').trim();
+  const parts = clean.split(/\s+/).map(parseFloat);
+  
+  if (parts.length === 1) return parts[0] * multiplier;
+  if (parts.length === 2) return (parts[0] + parts[1]/60) * multiplier;
+  if (parts.length === 3) return (parts[0] + parts[1]/60 + parts[2]/3600) * multiplier;
+  
+  return NaN;
+}
+
+document.getElementById('btn-add-coord').addEventListener('click', () => {
+  const latStr = document.getElementById('input-lat').value;
+  const lonStr = document.getElementById('input-lon').value;
+  
+  const lat = parseCoordinate(latStr);
+  const lon = parseCoordinate(lonStr);
 
   if (isNaN(lat) || isNaN(lon)) {
-    alert('Please enter valid numeric coordinates (Decimal Degrees).');
+    alert('Invalid format. Try "33.9" or "33 55.2 S"');
     return;
   }
 
@@ -377,6 +396,58 @@ async function renderWaveOverlay() {
 }
 
 document.getElementById('btn-waves').addEventListener('click', toggleWaves);
+
+// ── Wind Overlay Logic ──────────────────────────────────────────────────
+const windOverlayLayer = L.layerGroup().addTo(map);
+let windOverlayVisible = false;
+
+async function toggleWind() {
+  const btn = document.getElementById('btn-wind');
+  if (!btn) return;
+  windOverlayVisible = !windOverlayVisible;
+
+  if (windOverlayVisible) {
+    btn.classList.add('active');
+    btn.textContent = '🌬️ Loading...';
+    await renderWindOverlay();
+    btn.textContent = '🌬️ Hide Wind';
+  } else {
+    btn.classList.remove('active');
+    windOverlayLayer.clearLayers();
+    btn.textContent = '🌬️ Wind';
+  }
+}
+
+async function renderWindOverlay() {
+  windOverlayLayer.clearLayers();
+  const points = routeManager.waypoints.length >= 1 ? routeManager.waypoints : [map.getCenter()];
+  const nowISO = new Date().toISOString().slice(0, 13);
+
+  for (const latlng of points) {
+    try {
+      const data = await fetchMarineData({ lat: latlng.lat, lon: latlng.lng, days: 1 });
+      if (data && data.hourly) {
+        const idx = data.hourly.time.findIndex(t => t.startsWith(nowISO));
+        const useIdx = idx !== -1 ? idx : 0;
+        const speed = data.hourly.wind_speed_10m[useIdx];
+        const direction = data.hourly.wind_direction_10m[useIdx];
+        
+        L.marker(latlng, {
+          icon: L.divIcon({
+            className: 'wind-arrow-container',
+            html: `<div class="wind-arrow" style="transform: rotate(${direction}deg)">➤</div>
+                   <span class="wind-label">${speed}km/h</span>`,
+            iconSize: [50, 50],
+            iconAnchor: [25, 25]
+          }),
+          zIndexOffset: 1100
+        }).addTo(windOverlayLayer);
+      }
+    } catch (err) { console.error(err); }
+  }
+}
+
+document.getElementById('btn-wind').addEventListener('click', toggleWind);
 
 // Sidebar initialization
 loadCapeTownData();
