@@ -256,54 +256,39 @@ document.getElementById('btn-route').addEventListener('click', async () => {
   tideEl.innerHTML = '<p class="muted">Fetching tides...</p>';
 
   try {
-    // 1. Fetch Marine Data (Swell)
     const marine = await fetchMarineData({ lat: center.lat, lon: center.lng, days: 1 });
     if (marine && marine.daily) {
       const idx = marine.daily.time.indexOf(new Date().toISOString().slice(0, 10));
       if (idx >= 0) {
-        const swell = marine.daily.swell_wave_height_max[idx];
+        const swell = marine.daily.swell_wave_height_max[todayIdx || 0]; // Use safe index
         weatherEl.innerHTML = `
           <div class="route-card">
-            <p><strong>Max Swell:</strong> ${swell}m</p>
-            ${swell > CONFIG.dangerSwellMeters
+            <p><strong>Max Swell:</strong> ${marine.daily.swell_wave_height_max[idx]}m</p>
+            ${marine.daily.swell_wave_height_max[idx] > CONFIG.dangerSwellMeters
               ? '<span class="warning-badge">⚠️ Heavy Swell — Caution!</span>'
               : '<span class="safe-badge">🟢 Manageable Swell</span>'}
           </div>
         `;
       }
     }
-
-    // 2. Fetch Tide Data
     const tides = await fetchTides(center.lat, center.lng);
     renderTides(tides);
-
-  } catch (err) {
-    console.error('Data fetch failed:', err);
-    weatherEl.innerHTML = '<p class="muted">Could not fetch marine data.</p>';
-    tideEl.innerHTML = '<p class="muted">Could not fetch tide data.</p>';
-  }
+  } catch (err) { console.error(err); }
 });
 
 document.getElementById('btn-set-speed').addEventListener('click', () => {
   const speedInput = document.getElementById('input-speed-knots');
   const speed = parseFloat(speedInput.value);
-  
-  if (isNaN(speed) || speed <= 0) {
-    alert('Please enter a valid speed (e.g. 6.0)');
-    return;
-  }
-
-  CONFIG.planningSpeedKnots = speed;
-  
-  if (routeManager.waypoints.length >= 2) {
-    routeManager.renderPlanningDetails();
+  if (!isNaN(speed) && speed > 0) {
+    CONFIG.planningSpeedKnots = speed;
+    if (routeManager.waypoints.length >= 2) routeManager.renderPlanningDetails();
   }
 });
 
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();
   document.getElementById('marine-weather').innerHTML = '';
-  loadCapeTownData(); // Reset to Cape Town data
+  loadCapeTownData();
 });
 
 async function loadCapeTownData() {
@@ -314,6 +299,52 @@ async function loadCapeTownData() {
 map.on('click', (e) => {
   routeManager.addWaypoint(e.latlng);
 });
+
+// ── Wave Overlay Logic ──────────────────────────────────────────────────
+const waveOverlayLayer = L.layerGroup().addTo(map);
+let waveOverlayVisible = false;
+
+async function toggleWaves() {
+  const btn = document.getElementById('btn-waves');
+  if (!btn) return;
+  waveOverlayVisible = !waveOverlayVisible;
+
+  if (waveOverlayVisible) {
+    btn.classList.add('active');
+    btn.textContent = '🌊 Loading...';
+    await renderWaveOverlay();
+    btn.textContent = '🌊 Hide Waves';
+  } else {
+    btn.classList.remove('active');
+    waveOverlayLayer.clearLayers();
+    btn.textContent = '🌊 Waves';
+  }
+}
+
+async function renderWaveOverlay() {
+  waveOverlayLayer.clearLayers();
+  const points = routeManager.waypoints.length >= 1 ? routeManager.waypoints : [map.getCenter()];
+
+  for (const latlng of points) {
+    try {
+      const data = await fetchMarineData({ lat: latlng.lat, lon: latlng.lng, days: 1 });
+      if (data && data.hourly) {
+        const height = data.hourly.wave_height[0];
+        const direction = data.hourly.wave_direction[0];
+        L.marker(latlng, {
+          icon: L.divIcon({
+            className: 'wave-arrow-container',
+            html: `<div class="wave-arrow" style="transform: rotate(${direction}deg)">⬇️</div><span class="wave-label">${height}m</span>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+          })
+        }).addTo(waveOverlayLayer);
+      }
+    } catch (err) { console.error(err); }
+  }
+}
+
+document.getElementById('btn-waves').addEventListener('click', toggleWaves);
 
 // Sidebar initialization
 loadCapeTownData();
