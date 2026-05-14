@@ -29,6 +29,35 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
 .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.speed-control {
+  display: flex;
+  align-items: center;
+  background: #111827;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 0 4px 0 10px;
+  gap: 6px;
+}
+.speed-control input {
+  width: 45px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: none;
+}
+.speed-control .unit {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.speed-control .btn-secondary {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+}
+
 /* ── Sidebar ─────────────────────────────────────────────── */
 #sidebar {
   position: absolute; bottom: 12px; right: 12px; width: 320px; max-height: 45vh;

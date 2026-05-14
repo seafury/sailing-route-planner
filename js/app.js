@@ -284,6 +284,22 @@ document.getElementById('btn-route').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('btn-set-speed').addEventListener('click', () => {
+  const speedInput = document.getElementById('input-speed-knots');
+  const speed = parseFloat(speedInput.value);
+  
+  if (isNaN(speed) || speed <= 0) {
+    alert('Please enter a valid speed (e.g. 6.0)');
+    return;
+  }
+
+  CONFIG.planningSpeedKnots = speed;
+  
+  if (routeManager.waypoints.length >= 2) {
+    routeManager.renderPlanningDetails();
+  }
+});
+
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();
   document.getElementById('marine-weather').innerHTML = '';
