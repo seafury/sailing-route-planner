@@ -28,23 +28,6 @@ const CAPE_TOWN_MARITIME = {
     {
       type: "Feature",
       properties: {
-        name: "Cape Town Port Limits",
-        description: "Official boundary of the Port of Cape Town.",
-        style: { color: "#3b82f6", weight: 2, fillOpacity: 0.1 }
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [[
-          [18.401, -33.901], // Green Point
-          [18.368, -33.815], // Robben Island
-          [18.484, -33.896], // Diep River Mouth
-          [18.401, -33.901]
-        ]]
-      }
-    },
-    {
-      type: "Feature",
-      properties: {
         name: "Pilot Boarding Station",
         description: "Compulsory pilotage boarding point (VHF Ch 14).",
         icon: "⚓"
