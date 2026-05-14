@@ -1,5 +1,3 @@
-import { CAPE_TOWN_MARITIME } from './overlays.js';
-
 // ── Marine & Tide Fetch Module ──────────────────────────────────────────
 async function fetchMarineData({ lat, lon, days = 3 }) {
   const today = new Date().toISOString().slice(0, 10);
