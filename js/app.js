@@ -449,11 +449,20 @@ async function renderWindOverlay() {
 
 document.getElementById('btn-wind').addEventListener('click', toggleWind);
 
+function toDMS(decimal, isLat) {
+  const abs = Math.abs(decimal);
+  const d = Math.floor(abs);
+  const m = Math.floor((abs - d) * 60);
+  const s = ((abs - d - m/60) * 3600).toFixed(1);
+  const cardinal = isLat ? (decimal >= 0 ? 'N' : 'S') : (decimal >= 0 ? 'E' : 'W');
+  return `${d}°${m}'${s}"${cardinal}`;
+}
+
 // ── Mouse Tracking Logic ────────────────────────────────────────────────
 map.on('mousemove', (e) => {
   const el = document.getElementById('mouse-coords');
   if (el) {
-    el.textContent = `Lat: ${e.latlng.lat.toFixed(4)}, Lon: ${e.latlng.lng.toFixed(4)}`;
+    el.textContent = `${toDMS(e.latlng.lat, true)} | ${toDMS(e.latlng.lng, false)}`;
   }
 });
 
@@ -506,8 +515,8 @@ function renderGrid() {
     L.marker([lat, bounds.getWest()], {
       icon: L.divIcon({
         className: 'grid-label',
-        html: `${lat.toFixed(step < 0.1 ? 3 : 1)}°`,
-        iconSize: [40, 20],
+        html: toDMS(lat, true),
+        iconSize: [80, 20],
         iconAnchor: [-5, 10]
       })
     }).addTo(gridLayer);
@@ -520,9 +529,9 @@ function renderGrid() {
     L.marker([bounds.getNorth(), lon], {
       icon: L.divIcon({
         className: 'grid-label',
-        html: `${lon.toFixed(step < 0.1 ? 3 : 1)}°`,
-        iconSize: [40, 20],
-        iconAnchor: [20, -5]
+        html: toDMS(lon, false),
+        iconSize: [80, 20],
+        iconAnchor: [40, -5]
       })
     }).addTo(gridLayer);
   }
