@@ -123,6 +123,7 @@ class RouteManager {
     this.markers = [];
     this.routingControl = null;
     this.lastDistanceNm = null;
+    this.hasEnd = false;
   }
 
   metersToNauticalMiles(meters) {
@@ -160,56 +161,98 @@ class RouteManager {
     return (bearing + 360) % 360;
   }
 
-  addWaypoint(latlng) {
-    const idx = this.waypoints.length;
-    this.waypoints.push(latlng);
+  addWaypoint(latlng, mode = 'between') {
+    if (mode === 'start') {
+      if (this.waypoints.length > 0) {
+        this.waypoints[0] = latlng;
+      } else {
+        this.waypoints.push(latlng);
+      }
+    } else if (mode === 'end') {
+      if (this.hasEnd && this.waypoints.length > 0) {
+        this.waypoints[this.waypoints.length - 1] = latlng;
+      } else {
+        this.waypoints.push(latlng);
+        this.hasEnd = true;
+      }
+    } else { // 'between'
+      if (this.hasEnd && this.waypoints.length > 1) {
+        // Insert before the end waypoint
+        this.waypoints.splice(this.waypoints.length - 1, 0, latlng);
+      } else {
+        this.waypoints.push(latlng);
+      }
+    }
+    this.redraw();
+  }
 
-    const marker = L.marker(latlng, {
-      icon: L.divIcon({
-        className: 'waypoint-label',
-        html: String.fromCharCode(65 + idx), // A, B, C...
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
-      }),
-    }).addTo(map);
+  redraw() {
+    // Clear existing visuals
+    this.markers.forEach(m => this.map.removeLayer(m));
+    this.markers = [];
+    this.waypointLinks.forEach(l => this.map.removeLayer(l));
+    this.waypointLinks = [];
+    this.waypointArrows.forEach(a => this.map.removeLayer(a));
+    this.waypointArrows = [];
 
-    this.markers.push(marker);
-
-    // Draw a direct visual link from the previous waypoint to this one.
-    if (this.waypoints.length >= 2) {
-      const prev = this.waypoints[this.waypoints.length - 2];
-      const link = L.polyline([prev, latlng], {
-        color: CONFIG.waypointLinkColor,
-        weight: 3,
-        opacity: 0.9,
-      }).addTo(this.map);
-      this.waypointLinks.push(link);
-
-      const midpoint = L.latLng(
-        (prev.lat + latlng.lat) / 2,
-        (prev.lng + latlng.lng) / 2
-      );
-      const bearing = this.calculateBearingDegrees(prev, latlng);
-      const bearingTrue = Math.round(bearing);
-      const cssRotation = bearing - 90;
-      const arrow = L.marker(midpoint, {
+    // Redraw all waypoints
+    this.waypoints.forEach((latlng, idx) => {
+      const marker = L.marker(latlng, {
         icon: L.divIcon({
-          className: 'waypoint-link-arrow',
-          html: `<div style="color:${CONFIG.waypointLinkColor};font-size:18px;line-height:1;transform:rotate(${cssRotation}deg);">➤</div>`,
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
+          className: 'waypoint-label',
+          html: String.fromCharCode(65 + idx), // A, B, C...
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
         }),
       }).addTo(this.map);
-      arrow.bindTooltip(`${bearingTrue}°T`, {
-        permanent: true,
-        direction: 'top',
-        offset: [0, -10],
-        className: 'bearing-tooltip',
-      });
-      this.waypointArrows.push(arrow);
-    }
+      this.markers.push(marker);
 
-    if (this.waypoints.length >= 2) this.calculateRoute();
+      // Draw direct visual link from the previous waypoint to this one.
+      if (idx > 0) {
+        const prev = this.waypoints[idx - 1];
+        const link = L.polyline([prev, latlng], {
+          color: CONFIG.waypointLinkColor,
+          weight: 3,
+          opacity: 0.9,
+        }).addTo(this.map);
+        this.waypointLinks.push(link);
+
+        const midpoint = L.latLng(
+          (prev.lat + latlng.lat) / 2,
+          (prev.lng + latlng.lng) / 2
+        );
+        const bearing = this.calculateBearingDegrees(prev, latlng);
+        const bearingTrue = Math.round(bearing);
+        const cssRotation = bearing - 90;
+        const arrow = L.marker(midpoint, {
+          icon: L.divIcon({
+            className: 'waypoint-link-arrow',
+            html: `<div style="color:${CONFIG.waypointLinkColor};font-size:18px;line-height:1;transform:rotate(${cssRotation}deg);">➤</div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9],
+          }),
+        }).addTo(this.map);
+        arrow.bindTooltip(`${bearingTrue}°T`, {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -10],
+          className: 'bearing-tooltip',
+        });
+        this.waypointArrows.push(arrow);
+      }
+    });
+
+    if (this.waypoints.length >= 2) {
+      this.calculateRoute();
+    } else if (this.waypoints.length < 2) {
+      // Clear route line if fewer than 2 waypoints
+      if (this.routingControl) {
+        this.map.removeControl(this.routingControl);
+        this.routingControl = null;
+      }
+      document.getElementById('route-details').innerHTML =
+        '<p class="muted">Click the map to set waypoints.</p>';
+    }
   }
 
   async calculateRoute() {
@@ -241,6 +284,7 @@ class RouteManager {
 
   clear() {
     this.waypoints = [];
+    this.hasEnd = false;
     this.markers.forEach(m => this.map.removeLayer(m));
     this.markers = [];
     this.waypointLinks.forEach(l => this.map.removeLayer(l));
@@ -378,21 +422,41 @@ async function renderSwellOverlay() {
 
 // ── UI Event Handlers ───────────────────────────────────────────────────
 
-let mode = 'start'; // 'start' | 'end'
+let mode = 'start'; // 'start' | 'between' | 'end'
 document.getElementById('input-speed-knots').value = CONFIG.planningSpeedKnots.toFixed(1);
+updateButtonStates();
+
+function updateButtonStates() {
+  const modes = ['start', 'between', 'end'];
+  modes.forEach(m => {
+    const btn = document.getElementById(`btn-set-${m}`);
+    if (mode === m) {
+      btn.classList.remove('btn-primary', 'btn-secondary');
+      btn.classList.add('btn-accent');
+    } else {
+      btn.classList.remove('btn-accent');
+      if (m === 'start') {
+        btn.classList.add('btn-primary');
+      } else {
+        btn.classList.add('btn-secondary');
+      }
+    }
+  });
+}
 
 document.getElementById('btn-set-start').addEventListener('click', () => {
   mode = 'start';
-  document.getElementById('btn-set-start').classList.add('btn-accent');
-  document.getElementById('btn-set-end').classList.remove('btn-accent');
-  document.getElementById('btn-set-end').classList.add('btn-secondary');
+  updateButtonStates();
+});
+
+document.getElementById('btn-set-between').addEventListener('click', () => {
+  mode = 'between';
+  updateButtonStates();
 });
 
 document.getElementById('btn-set-end').addEventListener('click', () => {
   mode = 'end';
-  document.getElementById('btn-set-end').classList.add('btn-accent');
-  document.getElementById('btn-set-start').classList.remove('btn-accent');
-  document.getElementById('btn-set-start').classList.add('btn-primary');
+  updateButtonStates();
 });
 
 document.getElementById('btn-clear').addEventListener('click', () => {
@@ -422,7 +486,7 @@ document.getElementById('btn-add-latlon').addEventListener('click', () => {
     return;
   }
 
-  routeManager.addWaypoint(L.latLng(lat, lon));
+  routeManager.addWaypoint(L.latLng(lat, lon), mode);
   map.panTo([lat, lon]);
   latInput.value = '';
   lonInput.value = '';
@@ -522,7 +586,7 @@ document.getElementById('btn-route').addEventListener('click', async () => {
 });
 
 map.on('click', (e) => {
-  routeManager.addWaypoint(e.latlng);
+  routeManager.addWaypoint(e.latlng, mode);
 });
 
 // ── Init sidebar with loading state ──────────────────────────────────────
