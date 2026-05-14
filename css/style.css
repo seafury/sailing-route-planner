@@ -196,20 +196,15 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
 }
 
 .coord-badge {
-  background: rgba(15, 23, 42, 0.9);
-  color: #94a3b8;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  background: #000000;
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
   font-family: 'JetBrains Mono', monospace;
-  border: 1px solid #334155;
+  border: 1px solid #1e293b;
   white-space: nowrap;
-}
-
-.coord-badge.decimal {
-  background: rgba(30, 41, 59, 0.8);
-  color: #64748b;
-  border-color: #1e293b;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .grid-label {
