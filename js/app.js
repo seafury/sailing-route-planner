@@ -260,11 +260,14 @@ document.getElementById('btn-route').addEventListener('click', async () => {
     if (marine && marine.daily) {
       const idx = marine.daily.time.indexOf(new Date().toISOString().slice(0, 10));
       if (idx >= 0) {
-        const swell = marine.daily.swell_wave_height_max[todayIdx || 0]; // Use safe index
+        const swell = marine.daily.swell_wave_height_max[idx];
+        const dir = marine.daily.wave_direction_dominant[idx];
+        const cardinal = getCardinal(dir);
         weatherEl.innerHTML = `
           <div class="route-card">
-            <p><strong>Max Swell:</strong> ${marine.daily.swell_wave_height_max[idx]}m</p>
-            ${marine.daily.swell_wave_height_max[idx] > CONFIG.dangerSwellMeters
+            <p><strong>Max Swell:</strong> ${swell}m</p>
+            <p><strong>Direction:</strong> ${cardinal} (${Math.round(dir)}°)</p>
+            ${swell > CONFIG.dangerSwellMeters
               ? '<span class="warning-badge">⚠️ Heavy Swell — Caution!</span>'
               : '<span class="safe-badge">🟢 Manageable Swell</span>'}
           </div>
@@ -321,6 +324,11 @@ async function toggleWaves() {
   }
 }
 
+function getCardinal(angle) {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return directions[Math.round(angle / 45) % 8];
+}
+
 async function renderWaveOverlay() {
   waveOverlayLayer.clearLayers();
   const points = routeManager.waypoints.length >= 1 ? routeManager.waypoints : [map.getCenter()];
@@ -331,12 +339,15 @@ async function renderWaveOverlay() {
       if (data && data.hourly) {
         const height = data.hourly.wave_height[0];
         const direction = data.hourly.wave_direction[0];
+        const cardinal = getCardinal(direction);
+        
         L.marker(latlng, {
           icon: L.divIcon({
             className: 'wave-arrow-container',
-            html: `<div class="wave-arrow" style="transform: rotate(${direction}deg)">⬇️</div><span class="wave-label">${height}m</span>`,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20]
+            html: `<div class="wave-arrow" style="transform: rotate(${direction}deg)">⬇️</div>
+                   <span class="wave-label">${height}m ${cardinal}</span>`,
+            iconSize: [50, 50],
+            iconAnchor: [25, 25]
           })
         }).addTo(waveOverlayLayer);
       }
