@@ -112,27 +112,48 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   background: #111827ee !important;
   border: 1px solid #1e293b !important;
   color: #e2e8f0 !important;
-  border-radius: 8px !important;
-  padding: 6px !important;
+  border-radius: 10px !important;
+  padding: 8px !important;
   backdrop-filter: blur(8px);
-  z-index: 2000 !important; /* Ensure it's above other UI */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 2000 !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+/* Make the toggle icon much larger and easier to hit */
+.leaflet-control-layers-toggle {
+  width: 44px !important;
+  height: 44px !important;
+  background-size: 26px 26px !important;
 }
 .leaflet-control-layers-expanded {
-  padding: 10px !important;
+  padding: 12px !important;
+  min-width: 180px;
 }
 .leaflet-control-layers label {
-  font-size: 0.82rem;
-  margin-bottom: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background 0.2s;
+  padding: 6px 8px; /* Larger hit area */
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .leaflet-control-layers label:hover {
   background: #1e293b;
+  transform: translateX(2px);
+}
+/* Larger radio/checkbox hit area */
+.leaflet-control-layers-selector {
+  width: 16px;
+  height: 16px;
+  margin: 0 !important;
+  cursor: pointer;
 }
 .leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
   background: #111827ee !important;
   color: #e2e8f0 !important;
   border: 1px solid #1e293b !important;

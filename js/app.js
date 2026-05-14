@@ -346,7 +346,7 @@ overlays["Seamarks (Buoys/Lights)"].addTo(map);
 // Add Layer Control
 L.control.layers(baseLayers, overlays, {
   position: 'topright',
-  collapsed: true
+  collapsed: false // Kept expanded for easier maritime use
 }).addTo(map);
 
 // Add Zoom Control in top-left to avoid overlap
