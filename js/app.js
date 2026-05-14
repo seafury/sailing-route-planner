@@ -165,6 +165,25 @@ class RouteManager {
         styles: [{ color: CONFIG.routeColor, weight: CONFIG.routeWeight, opacity: 0.8 }],
         extendToWaypoints: false,
       },
+      createMarker: (i, wp) => {
+        const marker = L.marker(wp.latLng, {
+          draggable: true,
+          icon: L.divIcon({
+            className: 'waypoint-icon',
+            html: `<span>${String.fromCharCode(65 + i)}</span>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          })
+        });
+        
+        marker.on('contextmenu', (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.waypoints.splice(i, 1);
+          this.render();
+        });
+        
+        return marker;
+      },
       show: false,
       addWaypoints: false,
       fitSelectedRoutes: false,
