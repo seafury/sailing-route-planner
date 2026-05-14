@@ -220,6 +220,16 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   pointer-events: none;
 }
 
+.grid-label {
+  color: #64748b;
+  font-size: 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 0 2px rgba(0,0,0,0.5);
+  pointer-events: none;
+  background: transparent;
+  border: none;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 600px) {
   #sidebar { width: calc(100% - 24px); max-height: 35vh; bottom: 8px; right: 8px; left: 8px; }

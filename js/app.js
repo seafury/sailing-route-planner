@@ -469,33 +469,61 @@ function toggleGrid() {
     btn.classList.add('active');
     renderGrid();
     gridLayer.addTo(map);
+    map.on('moveend', renderGrid);
   } else {
     btn.classList.remove('active');
     map.removeLayer(gridLayer);
+    map.off('moveend', renderGrid);
   }
 }
 
 function renderGrid() {
+  if (!gridVisible) return;
   gridLayer.clearLayers();
-  const step = 0.1; // 0.1 degree grid
   
-  // Latitude lines
-  for (let lat = -90; lat <= 90; lat += step) {
-    L.polyline([[lat, -180], [lat, 180]], {
-      color: '#334155',
-      weight: 0.5,
-      opacity: 0.5,
-      interactive: false
+  const bounds = map.getBounds();
+  const zoom = map.getZoom();
+  
+  // Dynamic step based on zoom
+  let step = 1;
+  if (zoom <= 5) step = 10;
+  else if (zoom <= 8) step = 1;
+  else if (zoom <= 11) step = 0.1;
+  else if (zoom <= 14) step = 0.01;
+  else step = 0.001;
+
+  const startLat = Math.floor(bounds.getSouth() / step) * step;
+  const endLat = Math.ceil(bounds.getNorth() / step) * step;
+  const startLon = Math.floor(bounds.getWest() / step) * step;
+  const endLon = Math.ceil(bounds.getEast() / step) * step;
+
+  const lineStyle = { color: '#334155', weight: 0.5, opacity: 0.4, interactive: false };
+
+  // Latitude lines + labels
+  for (let lat = startLat; lat <= endLat; lat += step) {
+    L.polyline([[lat, bounds.getWest()], [lat, bounds.getEast()]], lineStyle).addTo(gridLayer);
+    
+    L.marker([lat, bounds.getWest()], {
+      icon: L.divIcon({
+        className: 'grid-label',
+        html: `${lat.toFixed(step < 0.1 ? 3 : 1)}°`,
+        iconSize: [40, 20],
+        iconAnchor: [-5, 10]
+      })
     }).addTo(gridLayer);
   }
   
-  // Longitude lines
-  for (let lon = -180; lon <= 180; lon += step) {
-    L.polyline([[-90, lon], [90, lon]], {
-      color: '#334155',
-      weight: 0.5,
-      opacity: 0.5,
-      interactive: false
+  // Longitude lines + labels
+  for (let lon = startLon; lon <= endLon; lon += step) {
+    L.polyline([[bounds.getSouth(), lon], [bounds.getNorth(), lon]], lineStyle).addTo(gridLayer);
+    
+    L.marker([bounds.getNorth(), lon], {
+      icon: L.divIcon({
+        className: 'grid-label',
+        html: `${lon.toFixed(step < 0.1 ? 3 : 1)}°`,
+        iconSize: [40, 20],
+        iconAnchor: [20, -5]
+      })
     }).addTo(gridLayer);
   }
 }
