@@ -167,6 +167,8 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   font-size: 24px;
   color: #38bdf8;
   text-shadow: 0 0 4px rgba(0,0,0,0.8);
+  margin-right: 90px;
+  margin-top: 100px;
 }
 .wave-label {
   background: rgba(17, 24, 39, 0.85);
@@ -180,29 +182,7 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   border: 1px solid #1e293b;
 }
 
-/* ── Wind Overlay Styling ────────────────────────────────── */
-.wind-arrow-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.wind-arrow {
-  font-size: 20px;
-  color: #4ade80; /* Green for wind */
-  text-shadow: 0 0 4px rgba(0,0,0,0.8);
-}
-.wind-label {
-  background: rgba(17, 24, 39, 0.85);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 4px;
-  margin-top: -3px;
-  white-space: nowrap;
-  border: 1px solid #1e293b;
-}
+
 
 .coord-badge {
   position: absolute;
