@@ -250,9 +250,13 @@ document.getElementById('btn-route').addEventListener('click', async () => {
   const bounds = map.getBounds();
   const center = bounds.getCenter();
   const weatherEl = document.getElementById('marine-weather');
+  const tideEl = document.getElementById('tide-forecast');
+  
   weatherEl.innerHTML = '<p class="muted">Fetching marine weather...</p>';
+  tideEl.innerHTML = '<p class="muted">Fetching tides...</p>';
 
   try {
+    // 1. Fetch Marine Data (Swell)
     const marine = await fetchMarineData({ lat: center.lat, lon: center.lng, days: 1 });
     if (marine && marine.daily) {
       const idx = marine.daily.time.indexOf(new Date().toISOString().slice(0, 10));
@@ -268,21 +272,32 @@ document.getElementById('btn-route').addEventListener('click', async () => {
         `;
       }
     }
+
+    // 2. Fetch Tide Data
+    const tides = await fetchTides(center.lat, center.lng);
+    renderTides(tides);
+
   } catch (err) {
-    console.error('Marine fetch failed:', err);
+    console.error('Data fetch failed:', err);
     weatherEl.innerHTML = '<p class="muted">Could not fetch marine data.</p>';
+    tideEl.innerHTML = '<p class="muted">Could not fetch tide data.</p>';
   }
 });
 
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();
   document.getElementById('marine-weather').innerHTML = '';
+  loadCapeTownData(); // Reset to Cape Town data
 });
+
+async function loadCapeTownData() {
+  const tides = await fetchTides(CONFIG.map.center[0], CONFIG.map.center[1]);
+  renderTides(tides);
+}
 
 map.on('click', (e) => {
   routeManager.addWaypoint(e.latlng);
 });
 
 // Sidebar initialization
-document.getElementById('tide-forecast').innerHTML = '<p class="muted">Tide data integration in progress...</p>';
-document.getElementById('tide-info').textContent = 'Tides: Cape Town';
+loadCapeTownData();

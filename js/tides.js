@@ -1,58 +1,74 @@
-// Tide Data Module
-// ──────────────────────────────────────────────────────────────────────────
-// Fetches tide predictions for a given lat/lon using free APIs.
-//
-// OPTION A: Open-Meteo (free, no key, 7-day tide forecast)
-//   https://open-meteo.com/en/docs#latitude=33.93&longitude=-118.42
-//   Endpoint: /v1/marine with hourly=wave_height,swell_wave_height
-//
-// OPTION B: NOAA CO-OPS (US only, free, no key)
-//   https://api.tidesandcurrents.noaa.gov/api/prod/datagetter
-//
-// OPTION C: tide-forecast.com (scraping via serverless proxy)
-//   Same source used in cape_town_report.py — needs a CORS proxy.
-//
-// To add a new source:
-//   1. Implement fetchTides(lat, lon) returning [{time, height, type}]
-//   2. Wire it into app.js → RouteManager
-// ──────────────────────────────────────────────────────────────────────────
+// ── Tide Data Module (Open-Meteo Built-in) ──────────────────────────────
+async function fetchTides(lat, lon) {
+  const params = new URLSearchParams({
+    latitude: lat,
+    longitude: lon,
+    hourly: 'sea_level_height',
+    timezone: 'Africa/Johannesburg',
+    forecast_days: 2
+  });
 
-async function fetchTidesNOAA(stationId = "9410663") {
-  // San Francisco example — replace with your station
-  const today = new Date().toISOString().slice(0, 10);
-  const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?` +
-    `product=predictions&application=NOS.COOPS.TAC.WL&begin_date=${today.replace(/-/g,'')}&end_date=${today.replace(/-/g,'')}` +
-    `&datum=MLLW&station=${stationId}&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+  try {
+    const resp = await fetch(`https://marine-api.open-meteo.com/v1/marine?${params}`);
+    if (!resp.ok) throw new Error(`Tide API error: ${resp.status}`);
+    const data = await resp.json();
+    
+    if (!data.hourly || !data.hourly.sea_level_height) return null;
 
-  const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`NOAA error: ${resp.status}`);
-  const data = await resp.json();
+    const heights = data.hourly.sea_level_height;
+    const times = data.hourly.time;
+    const predictions = [];
 
-  return data.predictions.map(p => ({
-    time: p.t,
-    height: parseFloat(p.v),
-    type: p.t.includes('H') ? 'High' : 'Low',
-  }));
+    // Simple peak/trough detection
+    for (let i = 1; i < heights.length - 1; i++) {
+      const prev = heights[i - 1];
+      const curr = heights[i];
+      const next = heights[i + 1];
+
+      if (curr > prev && curr > next) {
+        predictions.push({
+          time: new Date(times[i]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          height: curr.toFixed(2),
+          type: 'High'
+        });
+      } else if (curr < prev && curr < next) {
+        predictions.push({
+          time: new Date(times[i]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          height: curr.toFixed(2),
+          type: 'Low'
+        });
+      }
+    }
+    return predictions;
+  } catch (err) {
+    console.error('Tide fetch failed:', err);
+    return null;
+  }
 }
 
-// Render tide data into the sidebar
 function renderTides(tides) {
   const el = document.getElementById('tide-forecast');
   if (!tides || !tides.length) {
-    el.innerHTML = '<p class="muted">No tide data available.</p>';
+    el.innerHTML = '<p class="muted">Tide data unavailable for this location.</p>';
     return;
   }
 
-  let html = '<table class="tide-table"><thead><tr>';
-  html += '<th>Time</th><th>Type</th><th>Height</th>';
-  html += '</tr></thead><tbody>';
+  // Filter for next 4 events
+  const upcoming = tides.slice(0, 4);
 
-  tides.forEach(t => {
+  let html = '<div class="tide-card"><h4>Tidal Extremes (Next 24h)</h4>';
+  html += '<table class="tide-table"><tbody>';
+
+  upcoming.forEach(t => {
     const cls = t.type === 'High' ? 'high' : 'low';
     const icon = t.type === 'High' ? '⬆️' : '⬇️';
-    html += `<tr><td>${t.time}</td><td class="${cls}">${icon} ${t.type}</td><td>${t.height}m</td></tr>`;
+    html += `<tr>
+      <td>${t.time}</td>
+      <td class="${cls}"><strong>${icon} ${t.type}</strong></td>
+      <td>${t.height}m</td>
+    </tr>`;
   });
 
-  html += '</tbody></table>';
+  html += '</tbody></table></div>';
   el.innerHTML = html;
 }
