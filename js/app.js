@@ -102,6 +102,15 @@ class RouteManager {
     this.hasEnd = false;
   }
 
+  calculateTotalDistance() {
+    if (this.waypoints.length < 2) return 0;
+    let totalMeters = 0;
+    for (let i = 0; i < this.waypoints.length - 1; i++) {
+      totalMeters += this.waypoints[i].distanceTo(this.waypoints[i + 1]);
+    }
+    return this.metersToNauticalMiles(totalMeters);
+  }
+
   metersToNauticalMiles(meters) {
     return meters / 1852;
   }
@@ -119,13 +128,20 @@ class RouteManager {
   }
 
   renderPlanningDetails(distanceNm) {
+    if (distanceNm === undefined) {
+      distanceNm = this.calculateTotalDistance();
+    }
+    this.lastDistanceNm = distanceNm;
+
     const durationHours = distanceNm / CONFIG.planningSpeedKnots;
-    document.getElementById('route-details').innerHTML = `
-      <p><strong>Distance:</strong> ${distanceNm.toFixed(2)} nm</p>
-      <p><strong>Planning speed:</strong> ${CONFIG.planningSpeedKnots.toFixed(1)} kn</p>
-      <p><strong>Duration:</strong> ${this.formatDuration(durationHours)}</p>
-      <p><strong>ETA:</strong> ${this.formatArrivalTime(durationHours)}</p>
-      <p><strong>Waypoints:</strong> ${this.waypoints.length}</p>
+    document.getElementById('route-summary').innerHTML = `
+      <div class="route-card">
+        <p><strong>Distance:</strong> ${distanceNm.toFixed(2)} nm</p>
+        <p><strong>Planning Speed:</strong> ${CONFIG.planningSpeedKnots.toFixed(1)} kn</p>
+        <p><strong>Duration:</strong> ${this.formatDuration(durationHours)}</p>
+        <p><strong>ETA:</strong> ${this.formatArrivalTime(durationHours)}</p>
+        <p><strong>Waypoints:</strong> ${this.waypoints.length}</p>
+      </div>
     `;
   }
 
@@ -232,7 +248,7 @@ class RouteManager {
         this.map.removeControl(this.routingControl);
         this.routingControl = null;
       }
-      document.getElementById('route-details').innerHTML =
+      document.getElementById('route-summary').innerHTML =
         '<p class="muted">Click the map to set waypoints.</p>';
     }
   }
@@ -279,8 +295,9 @@ class RouteManager {
       this.map.removeControl(this.routingControl);
       this.routingControl = null;
     }
-    document.getElementById('route-details').innerHTML =
+    document.getElementById('route-summary').innerHTML =
       '<p class="muted">Click the map to set waypoints.</p>';
+    document.getElementById('route-marine').innerHTML = '';
   }
 }
 
@@ -542,12 +559,18 @@ document.getElementById('btn-route').addEventListener('click', async () => {
     CONFIG.planningSpeedKnots = speedKnots;
   }
 
-  // Always refresh planning details from current route distance and vessel speed.
+  // 1. Update planning details immediately using synchronous calculation
+  routeManager.renderPlanningDetails();
+
+  // 2. Refresh the visual route line (async)
   routeManager.calculateRoute();
 
-  // Fetch marine data for the route bbox
+  // 3. Fetch marine data for the route
   const bounds = map.getBounds();
   const center = bounds.getCenter();
+  const marineEl = document.getElementById('route-marine');
+  
+  marineEl.innerHTML = '<p class="muted">Fetching marine weather...</p>';
 
   try {
     const marine = await fetchMarineData({
@@ -562,17 +585,19 @@ document.getElementById('btn-route').addEventListener('click', async () => {
       );
       if (today >= 0) {
         const swell = marine.daily.swell_wave_height_max[today];
-        document.getElementById('route-details').innerHTML += `
-          <hr style="border-color:#1e293b;margin:8px 0">
-          <p><strong>Today's max swell:</strong> ${swell}m</p>
-          ${swell > CONFIG.dangerSwellMeters
-            ? '<p style="color:#ef4444">⚠️ Heavy swell — caution for small craft!</p>'
-            : '<p style="color:#22c55e">🟢 Manageable swell conditions</p>'}
+        marineEl.innerHTML = `
+          <div class="route-card">
+            <p><strong>Today's Max Swell:</strong> ${swell}m</p>
+            ${swell > CONFIG.dangerSwellMeters
+              ? '<span class="warning-badge">⚠️ Heavy Swell — Caution!</span>'
+              : '<span class="safe-badge">🟢 Manageable Swell</span>'}
+          </div>
         `;
       }
     }
   } catch (err) {
     console.error('Marine fetch failed:', err);
+    marineEl.innerHTML = '<p class="muted">Could not fetch marine data.</p>';
   }
 });
 
