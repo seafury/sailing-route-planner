@@ -287,6 +287,28 @@ document.getElementById('btn-set-speed').addEventListener('click', () => {
   }
 });
 
+document.getElementById('btn-add-coord').addEventListener('click', () => {
+  const latStr = document.getElementById('input-lat').value.trim();
+  const lonStr = document.getElementById('input-lon').value.trim();
+  
+  const lat = parseFloat(latStr);
+  const lon = parseFloat(lonStr);
+
+  if (isNaN(lat) || isNaN(lon)) {
+    alert('Please enter valid numeric coordinates (Decimal Degrees).');
+    return;
+  }
+
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    alert('Coordinates out of range.');
+    return;
+  }
+
+  const latlng = L.latLng(lat, lon);
+  routeManager.addWaypoint(latlng);
+  map.setView(latlng, map.getZoom());
+});
+
 document.getElementById('btn-clear').addEventListener('click', () => {
   routeManager.clear();
   document.getElementById('marine-weather').innerHTML = '';

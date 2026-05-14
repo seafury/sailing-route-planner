@@ -25,7 +25,16 @@
       <button id="btn-clear" class="btn btn-danger">🗑️ Clear</button>
     </div>
     <div id="sidebar">
-      <h3>Route Details</h3>
+      <div class="sidebar-section">
+        <h3>📍 Manual Waypoint</h3>
+        <div class="coord-inputs">
+          <input id="input-lat" type="text" placeholder="Lat (e.g. -33.9)" />
+          <input id="input-lon" type="text" placeholder="Lon (e.g. 18.4)" />
+          <button id="btn-add-coord" class="btn btn-secondary">Add Point</button>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <h3>🏁 Route Summary</h3>
       <div id="route-summary">
         <p class="muted">Click the map to set waypoints. Routes auto-calculate with nautical distance.</p>
       </div>
