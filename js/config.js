@@ -57,34 +57,6 @@ const CAPE_TOWN_MARITIME = {
     {
       type: "Feature",
       properties: {
-        name: "TSS Entrance Lane",
-        description: "Inbound traffic lane for Table Bay.",
-        style: { color: "#ec4899", weight: 4, dashArray: "10, 10" }
-      },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [18.3, -33.8], [18.38, -33.88]
-        ]
-      }
-    },
-    {
-      type: "Feature",
-      properties: {
-        name: "TSS Exit Lane",
-        description: "Outbound traffic lane for Table Bay.",
-        style: { color: "#ec4899", weight: 4, dashArray: "10, 10" }
-      },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [18.35, -33.9], [18.25, -33.82]
-        ]
-      }
-    },
-    {
-      type: "Feature",
-      properties: {
         name: "VTS Reporting Point (4nm)",
         description: "Report to Port Control (VHF Ch 14) when 4nm off limits.",
         style: { color: "#f59e0b", weight: 2, dashArray: "5, 5" }
