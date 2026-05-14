@@ -409,9 +409,13 @@ function toDMS(decimal, isLat) {
 
 // ── Mouse Tracking Logic ────────────────────────────────────────────────
 map.on('mousemove', (e) => {
-  const el = document.getElementById('mouse-coords');
-  if (el) {
-    el.textContent = `${toDMS(e.latlng.lat, true)} | ${toDMS(e.latlng.lng, false)}`;
+  const dmsEl = document.getElementById('mouse-coords-dms');
+  const ddEl = document.getElementById('mouse-coords-dd');
+  if (dmsEl) {
+    dmsEl.textContent = `${toDMS(e.latlng.lat, true)} | ${toDMS(e.latlng.lng, false)}`;
+  }
+  if (ddEl) {
+    ddEl.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
   }
 });
 
