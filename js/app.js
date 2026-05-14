@@ -311,11 +311,6 @@ const map = L.map('map', {
 
 // 1. Base Layers
 const baseLayers = {
-  "Nautical Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: CONFIG.map.maxZoom
-  }),
   "Standard Chart": L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: CONFIG.map.maxZoom
@@ -334,7 +329,7 @@ const overlays = {
 };
 
 // Add default layers
-baseLayers["Nautical Dark"].addTo(map);
+baseLayers["Standard Chart"].addTo(map);
 overlays["Seamarks (Buoys/Lights)"].addTo(map);
 
 // Add Layer Control
