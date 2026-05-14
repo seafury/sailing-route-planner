@@ -326,26 +326,31 @@ async function toggleWaves() {
 async function renderWaveOverlay() {
   waveOverlayLayer.clearLayers();
   const points = routeManager.waypoints.length >= 1 ? routeManager.waypoints : [map.getCenter()];
+  
+  const nowISO = new Date().toISOString().slice(0, 13); // "2024-05-14T15"
 
   for (const latlng of points) {
     try {
       const data = await fetchMarineData({ lat: latlng.lat, lon: latlng.lng, days: 1 });
       if (data && data.hourly) {
-        const height = data.hourly.wave_height[0];
-        const direction = data.hourly.wave_direction[0];
-        const cardinal = getCardinal(direction);
+        const idx = data.hourly.time.findIndex(t => t.startsWith(nowISO));
+        const useIdx = idx !== -1 ? idx : 0;
+        
+        const height = data.hourly.wave_height[useIdx];
+        const direction = data.hourly.wave_direction[useIdx];
         
         L.marker(latlng, {
           icon: L.divIcon({
             className: 'wave-arrow-container',
             html: `<div class="wave-arrow" style="transform: rotate(${direction}deg)">⬇️</div>
                    <span class="wave-label">${height}m ${Math.round(direction)}°</span>`,
-            iconSize: [50, 50],
-            iconAnchor: [25, 25]
-          })
+            iconSize: [60, 60],
+            iconAnchor: [30, 30]
+          }),
+          zIndexOffset: 1000
         }).addTo(waveOverlayLayer);
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error('Wave data error:', err); }
   }
 }
 
