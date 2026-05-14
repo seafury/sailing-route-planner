@@ -1,30 +1,6 @@
 // ── Configuration ──────────────────────────────────────────────────────
 // Toggle data sources here. All are free / no-key-required endpoints.
 
-const CONFIG = {
-  // Map defaults — Cape Town harbour as centre point
-  map: {
-    center: [-33.9249, 18.4241],
-    zoom: 11,
-    maxZoom: 18,
-  },
-
-  // Tide data source — no API key needed
-  // Uses tide-forecast.com scraping (same source as daily report)
-  tideSource: 'tide-forecast',  // 'tide-forecast' | 'open-meteo'
-
-  // Open-Meteo Marine API (free, no key)
-  marineApi: 'https://marine-api.open-meteo.com/v1/marine',
-
-  // Chart display
-  routeColor: '#22c55e',
-  waypointLinkColor: '#4b0082', // Dark purple
-  routeWeight: 4,
-  waypointColor: '#3b82f6',
-  dangerSwellMeters: 3.0,  // Waves above this trigger warnings
-  planningSpeedKnots: 6.0, // Default vessel planning speed
-};
-
 // ── Marine & Tide Fetch Module ──────────────────────────────────────────
 // All API calls go through a single gateway function so you can swap
 // providers later without touching the rest of the codebase.
@@ -130,19 +106,25 @@ class RouteManager {
     return meters / 1852;
   }
 
-  formatEtaFromHours(totalHours) {
+  formatDuration(totalHours) {
     const hours = Math.floor(totalHours);
     const minutes = Math.round((totalHours - hours) * 60);
     if (minutes === 60) return `${hours + 1}h 00m`;
     return `${hours}h ${String(minutes).padStart(2, '0')}m`;
   }
 
+  formatArrivalTime(totalHours) {
+    const arrival = new Date(Date.now() + totalHours * 3600000);
+    return arrival.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
   renderPlanningDetails(distanceNm) {
-    const etaHours = distanceNm / CONFIG.planningSpeedKnots;
+    const durationHours = distanceNm / CONFIG.planningSpeedKnots;
     document.getElementById('route-details').innerHTML = `
       <p><strong>Distance:</strong> ${distanceNm.toFixed(2)} nm</p>
       <p><strong>Planning speed:</strong> ${CONFIG.planningSpeedKnots.toFixed(1)} kn</p>
-      <p><strong>Est. time:</strong> ${this.formatEtaFromHours(etaHours)}</p>
+      <p><strong>Duration:</strong> ${this.formatDuration(durationHours)}</p>
+      <p><strong>ETA:</strong> ${this.formatArrivalTime(durationHours)}</p>
       <p><strong>Waypoints:</strong> ${this.waypoints.length}</p>
     `;
   }
@@ -255,7 +237,7 @@ class RouteManager {
     }
   }
 
-  async calculateRoute() {
+  calculateRoute() {
     // We use a custom DirectRouter for maritime-friendly straight lines,
     // instead of road-based engines like OSRM.
     if (this.routingControl) {
@@ -272,7 +254,7 @@ class RouteManager {
       show: false,
       addWaypoints: false,
       fitSelectedRoutes: false, // Keep user-controlled viewport; do not auto-zoom/pan.
-    }).addTo(this.map);
+    });
 
     this.routingControl.on('routesfound', (e) => {
       const route = e.routes[0];
@@ -280,6 +262,8 @@ class RouteManager {
       this.lastDistanceNm = distanceNm;
       this.renderPlanningDetails(distanceNm);
     });
+
+    this.routingControl.addTo(this.map);
   }
 
   clear() {
@@ -549,6 +533,13 @@ document.getElementById('btn-route').addEventListener('click', async () => {
   if (routeManager.waypoints.length < 2) {
     alert('Set at least 2 waypoints first!');
     return;
+  }
+
+  // Sync speed from input field
+  const speedInput = document.getElementById('input-speed-knots');
+  const speedKnots = parseFloat(speedInput.value);
+  if (!isNaN(speedKnots) && speedKnots > 0) {
+    CONFIG.planningSpeedKnots = speedKnots;
   }
 
   // Always refresh planning details from current route distance and vessel speed.
