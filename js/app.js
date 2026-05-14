@@ -262,11 +262,10 @@ document.getElementById('btn-route').addEventListener('click', async () => {
       if (idx >= 0) {
         const swell = marine.daily.swell_wave_height_max[idx];
         const dir = marine.daily.wave_direction_dominant[idx];
-        const cardinal = getCardinal(dir);
         weatherEl.innerHTML = `
           <div class="route-card">
             <p><strong>Max Swell:</strong> ${swell}m</p>
-            <p><strong>Direction:</strong> ${cardinal} (${Math.round(dir)}°)</p>
+            <p><strong>Direction:</strong> ${Math.round(dir)}°</p>
             ${swell > CONFIG.dangerSwellMeters
               ? '<span class="warning-badge">⚠️ Heavy Swell — Caution!</span>'
               : '<span class="safe-badge">🟢 Manageable Swell</span>'}
@@ -324,11 +323,6 @@ async function toggleWaves() {
   }
 }
 
-function getCardinal(angle) {
-  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  return directions[Math.round(angle / 45) % 8];
-}
-
 async function renderWaveOverlay() {
   waveOverlayLayer.clearLayers();
   const points = routeManager.waypoints.length >= 1 ? routeManager.waypoints : [map.getCenter()];
@@ -345,7 +339,7 @@ async function renderWaveOverlay() {
           icon: L.divIcon({
             className: 'wave-arrow-container',
             html: `<div class="wave-arrow" style="transform: rotate(${direction}deg)">⬇️</div>
-                   <span class="wave-label">${height}m ${cardinal}</span>`,
+                   <span class="wave-label">${height}m ${Math.round(direction)}°</span>`,
             iconSize: [50, 50],
             iconAnchor: [25, 25]
           })
