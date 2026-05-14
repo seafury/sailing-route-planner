@@ -415,7 +415,11 @@ map.on('mousemove', (e) => {
     dmsEl.textContent = `${toDMS(e.latlng.lat, true)} | ${toDMS(e.latlng.lng, false)}`;
   }
   if (ddEl) {
-    ddEl.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+    const latBase = Math.abs(e.latlng.lat).toFixed(6);
+    const lonBase = Math.abs(e.latlng.lng).toFixed(6);
+    const latCard = e.latlng.lat >= 0 ? 'N' : 'S';
+    const lonCard = e.latlng.lng >= 0 ? 'E' : 'W';
+    ddEl.textContent = `${latBase}° ${latCard} | ${lonBase}° ${lonCard}`;
   }
 });
 
