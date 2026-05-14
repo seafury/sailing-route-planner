@@ -181,12 +181,6 @@ class RouteManager {
       fitSelectedRoutes: false,
     }).addTo(this.map);
 
-    this.routingControl.on('waypointcontextmenu', (e) => {
-      console.log('Waypoint context menu', e.index);
-      this.waypoints.splice(e.index, 1);
-      this.render();
-    });
-
     this.routingControl.on('routesfound', (e) => {
       const distanceNm = e.routes[0].summary.totalDistance / 1852;
       this.renderPlanningDetails(distanceNm);
@@ -343,6 +337,11 @@ document.getElementById('btn-add-coord').addEventListener('click', () => {
   const latlng = L.latLng(lat, lon);
   routeManager.addWaypoint(latlng);
   map.setView(latlng, map.getZoom());
+});
+
+document.getElementById('btn-undo').addEventListener('click', () => {
+  routeManager.waypoints.pop();
+  routeManager.render();
 });
 
 document.getElementById('btn-clear').addEventListener('click', () => {
