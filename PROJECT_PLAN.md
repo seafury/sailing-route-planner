@@ -40,7 +40,7 @@ sailing-route-planner/
 ```
 User clicks map → app.js captures latlng → adds waypoint marker
                  ↓ (2+ waypoints)
-         OSRM calculates route → draws polyline on map
+         Direct router calculates straight-line path → draws polyline on map
                  ↓
          Fetch marine data (Open-Meteo) → display swell/wind in sidebar
                  ↓
@@ -63,7 +63,7 @@ The MVP is complete only when all items below are done. Anything not listed here
 
 ### 1) Core Routing and UI (`js/app.js`, `index.html`, `css/style.css`) ✅ mostly done
 - [x] Place waypoints via map click
-- [x] Build route polyline from 2+ waypoints using OSRM
+- [x] Build route polyline from 2+ waypoints (Straight-line)
 - [x] Show route details in sidebar (distance/basic route info)
 - [x] Provide core controls (Start/End/Route/Clear/Tides)
 - [ ] Ensure clear error states for failed route requests and empty waypoint sets

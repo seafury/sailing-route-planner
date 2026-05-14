@@ -78,6 +78,41 @@ async function fetchTides({ lat, lon }) {
 
 // ── Waypoint & Route Manager ────────────────────────────────────────────
 
+/**
+ * Custom Leaflet Routing Machine router that calculates a direct (straight line)
+ * route between waypoints. This is more appropriate for maritime navigation
+ * in open water than road-based routing like OSRM.
+ */
+const DirectRouter = {
+  route: function(waypoints, callback, context) {
+    const routeWaypoints = waypoints.map(wp => ({
+      latLng: L.latLng(wp.latLng),
+      name: wp.name || '',
+    }));
+
+    const coordinates = routeWaypoints.map(wp => wp.latLng);
+
+    let totalDistance = 0;
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      totalDistance += coordinates[i].distanceTo(coordinates[i + 1]);
+    }
+
+    const routes = [{
+      name: 'Direct Route',
+      summary: {
+        totalDistance: totalDistance,
+        totalTime: 0,
+      },
+      coordinates: coordinates,
+      waypoints: routeWaypoints,
+      inputWaypoints: routeWaypoints,
+      instructions: [],
+    }];
+
+    callback.call(context, null, routes);
+  },
+};
+
 class RouteManager {
   constructor(map) {
     this.map = map;
@@ -178,17 +213,15 @@ class RouteManager {
   }
 
   async calculateRoute() {
-    // Leaflet Routing Machine uses OSRM / Valhalla / Mapbox by default
-    // For offline / free: use OSRM demo server
+    // We use a custom DirectRouter for maritime-friendly straight lines,
+    // instead of road-based engines like OSRM.
     if (this.routingControl) {
       this.map.removeControl(this.routingControl);
     }
 
     this.routingControl = L.Routing.control({
       waypoints: this.waypoints.map(w => L.latLng(w)),
-      router: L.Routing.osrmv1({
-        serviceUrl: 'https://router.project-osrm.org/route/v1',
-      }),
+      router: DirectRouter,
       lineOptions: {
         styles: [{ color: CONFIG.routeColor, weight: CONFIG.routeWeight, opacity: 0.8 }],
         extendToWaypoints: false, // Remove grey dashed connectors to snapped road points.

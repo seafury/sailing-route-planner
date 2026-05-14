@@ -6,7 +6,7 @@ Built for sailors who want to plan routes with real-time tidal conditions, not j
 
 ## Features
 
-- **Interactive Leaflet map** — Click to set waypoints, auto-route via OSRM
+- **Interactive Leaflet map** — Click to set waypoints, straight-line routing
 - **Tide data overlay** — High/low tide visualisation along route
 - **Marine weather** — Wave height, swell, wind data from Open-Meteo (free, no API key)
 - **Warning system** — Alerts when swell exceeds safe thresholds
@@ -50,7 +50,7 @@ npm run deploy
 | Source | Type | Auth | Coverage |
 |--------|------|------|----------|
 | OpenStreetMap | Basemap tiles | Free/None | Global |
-| OSRM (router.project-osrm.org) | Route calculation | Free | Global |
+| Custom Direct Router | Route calculation | Free | Global |
 | Open-Meteo Marine | Wave/swell/wind | Free | Global |
 | NOAA CO-OPS | Tide predictions | Free | US only |
 | tide-forecast.com | Tide predictions | N/A | Global (needs proxy) |
