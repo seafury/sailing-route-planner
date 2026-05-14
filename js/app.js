@@ -330,12 +330,6 @@ const overlays = {
   "Seamarks (Buoys/Lights)": L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {
     attribution: 'Seamarks: &copy; OpenSeaMap contributors',
     maxZoom: CONFIG.map.maxZoom
-  }),
-  "Bathymetry (Depths)": L.tileLayer.wms('https://wms.gebco.net/mapserv?', {
-    layers: 'GEBCO_LATEST',
-    format: 'image/png',
-    transparent: true,
-    attribution: 'Bathymetry: &copy; GEBCO'
   })
 };
 
