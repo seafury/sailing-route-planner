@@ -311,7 +311,7 @@ const map = L.map('map', {
 
 // 1. Base Layers
 const baseLayers = {
-  "Nautical Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  "Nautical Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: CONFIG.map.maxZoom
@@ -349,8 +349,13 @@ L.control.layers(baseLayers, overlays, {
   collapsed: true
 }).addTo(map);
 
-// Add Zoom Control back in a cleaner spot
-L.control.zoom({ position: 'topright' }).addTo(map);
+// Add Zoom Control in top-left to avoid overlap
+L.control.zoom({ position: 'topleft' }).addTo(map);
+
+// Handle base layer changes for debugging/consistency
+map.on('baselayerchange', (e) => {
+  console.log(`Map theme changed to: ${e.name}`);
+});
 
 const routeManager = new RouteManager(map);
 const swellOverlayLayer = L.layerGroup();

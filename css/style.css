@@ -115,18 +115,28 @@ header h1 { font-size: 1.4rem; font-weight: 700; }
   border-radius: 8px !important;
   padding: 6px !important;
   backdrop-filter: blur(8px);
+  z-index: 2000 !important; /* Ensure it's above other UI */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 .leaflet-control-layers-expanded {
   padding: 10px !important;
 }
 .leaflet-control-layers label {
-  font-size: 0.8rem;
-  margin-bottom: 4px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.leaflet-control-layers label:hover {
+  background: #1e293b;
 }
 .leaflet-control-zoom-in, .leaflet-control-zoom-out {
   background: #111827ee !important;
   color: #e2e8f0 !important;
   border: 1px solid #1e293b !important;
+  z-index: 2000 !important;
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
